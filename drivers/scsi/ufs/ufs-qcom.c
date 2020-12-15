@@ -912,8 +912,8 @@ out:
 static int ufs_qcom_full_reset(struct ufs_hba *hba)
 {
 	int ret = -ENOTSUPP;
-
 	bool reenable_intr = false;
+	
 	if (!hba->core_reset) {
 		dev_err(hba->dev, "%s: failed, err = %d\n", __func__,
 				ret);
