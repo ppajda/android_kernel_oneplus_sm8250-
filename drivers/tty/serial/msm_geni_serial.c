@@ -3693,6 +3693,7 @@ exit_wakeup_unregister:
 		wakeup_source_unregister(dev_port->geni_wake);
 exit_geni_serial_probe:
 	UART_LOG_DBG(dev_port->ipc_log_misc, &pdev->dev, "%s: ret:%d\n", __func__, ret);
+	wakeup_source_unregister(dev_port->geni_wake);
 	return ret;
 }
 
