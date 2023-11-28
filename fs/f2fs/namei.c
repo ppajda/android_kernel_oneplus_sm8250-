@@ -1104,7 +1104,7 @@ static int f2fs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	}
 
 	if (old_is_dir) {
-		if (old_dir_entry && !whiteout)
+		if (old_dir_entry)
 			f2fs_set_link(old_inode, old_dir_entry,
 						old_dir_page, new_dir);
 		else
