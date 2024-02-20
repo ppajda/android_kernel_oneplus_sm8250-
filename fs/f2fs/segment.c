@@ -2583,10 +2583,10 @@ find_other_zone:
 	if (secno >= MAIN_SECS(sbi)) {
 		secno = find_next_zero_bit(free_i->free_secmap,
 							MAIN_SECS(sbi), 0);
-			if (secno >= MAIN_SECS(sbi)) {
-				ret = -ENOSPC;
-				goto out_unlock;
-			}
+		if (secno >= MAIN_SECS(sbi)) {
+			ret = -ENOSPC;
+			goto out_unlock;
+		}
 	}
 	segno = GET_SEG_FROM_SEC(sbi, secno);
 	zoneno = GET_ZONE_FROM_SEC(sbi, secno);
