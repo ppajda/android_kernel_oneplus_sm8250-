@@ -615,7 +615,7 @@ static int __init skip_initramfs_param(char *str)
 __setup("skip_initramfs", skip_initramfs_param);
 
 #ifdef CONFIG_BLK_DEV_RAM
-static void populate_initrd_image(char *err)
+static void __init populate_initrd_image(char *err)
 {
 	ssize_t written;
 	struct file *file;
@@ -637,7 +637,6 @@ static void populate_initrd_image(char *err)
 	fput(file);
 }
 #endif /* CONFIG_BLK_DEV_RAM */
->>>>>>> a65f5dbf3249 (initramfs: factor out a helper to populate the initrd image)
 
 static int __init populate_rootfs(void)
 {
