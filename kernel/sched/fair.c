@@ -40,6 +40,18 @@ bool ux_task_misfit(struct task_struct *p, int cpu);
 #define scale_demand(d) ((d)/walt_scale_demand_divisor)
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
+#ifdef CONFIG_LOCKING_PROTECT
+#include <linux/sched_assist/sched_assist_locking.h>
+#endif
+
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+#include <linux/uidgid.h>
+#include <linux/cred.h>
+#include <linux/cpufreq.h>
+#include <linux/reciprocal_div.h>
+#include "../../drivers/soc/oplus/oplus_overload/task_overload.h"
+#endif
+
 #ifdef CONFIG_OPLUS_FEATURE_GAME_OPT
 #include "../../drivers/soc/oplus/game_opt/game_ctrl.h"
 #endif
@@ -659,6 +671,10 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	struct sched_entity *entry;
 	bool leftmost = true;
 
+#ifdef CONFIG_LOCKING_PROTECT
+	enqueue_locking_entity(cfs_rq, se);
+#endif
+
 	/*
 	 * Find the right place in the rbtree:
 	 */
@@ -684,6 +700,9 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 
 static void __dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+#ifdef CONFIG_LOCKING_PROTECT
+	dequeue_locking_entity(cfs_rq, se);
+#endif
 	rb_erase_cached(&se->run_node, &cfs_rq->tasks_timeline);
 }
 
@@ -4108,6 +4127,12 @@ static inline bool task_fits_max(struct task_struct *p, int cpu)
 	unsigned long max_capacity = cpu_rq(cpu)->rd->max_cpu_capacity.val;
 	unsigned long task_boost = per_task_boost(p);
 
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+	if (!test_task_ux(p)) {
+		if ((check_abnormal_task_util(p) && check_abnormal_freq(p) && check_abnormal_cpu_util()) || p->abnormal_flag > ABNORMAL_THRESHOLD)
+			return false;
+	}
+#endif
 	if (capacity == max_capacity)
 		return true;
 
@@ -4125,7 +4150,6 @@ static inline bool task_fits_max(struct task_struct *p, int cpu)
 	if (sched_assist_task_misfit(p, cpu, 0))
 		return false;
 #endif
-
 	return task_fits_capacity(p, capacity, cpu);
 }
 
@@ -4540,6 +4564,9 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 
 	ideal_runtime = sched_slice(cfs_rq, curr);
 	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
+#ifdef CONFIG_LOCKING_PROTECT
+	check_locking_protect_tick(curr);
+#endif
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	if (is_heavy_load_task(current))
 		ideal_runtime = HEAVY_LOAD_RUNTIME;
@@ -5726,7 +5753,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	enqueue_ux_thread(rq, p);
 #endif
-
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		cfs_rq->h_nr_running++;
@@ -5839,7 +5865,6 @@ static void dequeue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	dequeue_ux_thread(rq, p);
 #endif
-
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
 		cfs_rq->h_nr_running--;
@@ -7119,6 +7144,14 @@ static int get_start_cpu(struct task_struct *p)
 		start_cpu = rd->min_cap_orig_cpu;
 	}
 #endif
+
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+	if (!test_task_ux(p)) {
+		if ((check_abnormal_task_util(p) && check_abnormal_freq(p) && check_abnormal_cpu_util()) || p->abnormal_flag > ABNORMAL_THRESHOLD)
+			start_cpu = rd->min_cap_orig_cpu;
+	}
+#endif
+
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	if (sysctl_cpu_multi_thread && !is_heavy_load_task(p))
 		return rd->min_cap_orig_cpu;
@@ -7295,6 +7328,21 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 				}
 			}
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
+
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+			if (!test_task_ux(p) && is_max_capacity_cpu(i)) {
+				if (p->abnormal_flag % ABNORMAL_TIME == 0) {
+					if (check_abnormal_task_util(p) && check_abnormal_freq(p) && check_abnormal_cpu_util() && test_task_uid(p) && p->abnormal_flag <= ABNORMAL_THRESHOLD) {
+						p->abnormal_flag++;
+					}
+				} else if (p->abnormal_flag <= ABNORMAL_THRESHOLD)
+					p->abnormal_flag++;
+				if (p->abnormal_flag == ABNORMAL_THRESHOLD)
+					set_task_state(p);
+				if (p->abnormal_flag > ABNORMAL_THRESHOLD)
+					continue;
+			}
+#endif /* #OPLUS_FEATURE_ABNORMAL_FLAG */
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 			if (should_ux_task_skip_cpu(p, i))
 				continue;
@@ -8536,6 +8584,11 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 
 	if (unlikely(se == pse))
 		return;
+
+#ifdef CONFIG_LOCKING_PROTECT
+	if (check_locking_protect_wakeup(curr, p))
+		return;
+#endif
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	if (is_heavy_load_task(current))
 		return;
@@ -8692,7 +8745,9 @@ again:
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	pick_ux_thread(rq, &p, &se);
 #endif
-
+#ifdef CONFIG_LOCKING_PROTECT
+	pick_locking_thread(rq, &p, &se);
+#endif
 	/*
 	 * Since we haven't yet done put_prev_entity and if the selected task
 	 * is a different task than we started out with, try and touch the
@@ -8740,6 +8795,9 @@ simple:
 		p = pos;
 		se = &p->se;
 	}
+#ifdef CONFIG_LOCKING_PROTECT
+	pick_locking_thread(rq, &p, &se);
+#endif
 	for_each_sched_entity(se) {
 		set_next_entity(cfs_rq_of(se), se);
 	}
@@ -9162,6 +9220,12 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
 			!is_min_capacity_cpu(env->src_cpu))
 		return 0;
 
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+	if (sysctl_abnormal_enable && !test_task_ux(p) && p->abnormal_flag > ABNORMAL_THRESHOLD) {
+		if (is_max_capacity_cpu(env->dst_cpu))
+			return 0;
+	}
+#endif
 	if (!cpumask_test_cpu(env->dst_cpu, &p->cpus_allowed)) {
 		int cpu;
 
@@ -9368,6 +9432,13 @@ redo:
 		if (!can_migrate_task(p, env))
 			goto next;
 
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+		if (sysctl_abnormal_enable && !test_task_ux(p) && is_max_capacity_cpu(env->dst_cpu)) {
+			if (p->abnormal_flag > ABNORMAL_THRESHOLD) {
+				goto next;
+			}
+		}
+#endif
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 		if (sysctl_prefer_silver && sysctl_sched_assist_enabled && !test_task_ux(p) && is_max_capacity_cpu(env->dst_cpu)) {
 			if (prefer_silver_check_freq(env->src_cpu) && (prefer_silver_check_task_util(p) ||
@@ -13494,8 +13565,17 @@ void check_for_migration(struct rq *rq, struct task_struct *p)
 		rcu_read_lock();
 		new_cpu = find_energy_efficient_cpu(p, prev_cpu, 0, 1);
 		rcu_read_unlock();
+#ifdef CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG
+		if (!test_task_ux(p) && is_max_capacity_cpu(prev_cpu))
+			ret = check_skip_task_goplus(p, prev_cpu, new_cpu);
+		else
+			ret = false;
+		if (ret || ((new_cpu != -1) && (new_cpu != prev_cpu) && (capacity_orig_of(new_cpu) > capacity_orig_of(prev_cpu))
+				&& (!sysctl_abnormal_enable || p->abnormal_flag < ABNORMAL_THRESHOLD))) {
+#else
 		if ((new_cpu != -1) && (new_cpu != prev_cpu) &&
 		    (capacity_orig_of(new_cpu) > capacity_orig_of(prev_cpu))) {
+#endif
 			active_balance = kick_active_balance(rq, p, new_cpu);
 			if (active_balance) {
 				mark_reserved(new_cpu);
