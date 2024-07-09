@@ -5,3 +5,5 @@ subdir-ccflags-y += -I$(srctree)/drivers/pinctrl/qcom
 endif
 
 obj-y += oplus_sc8547a.o
+obj-y += oplus_nu2112a.o
+obj-y += oplus_nu2112a_slave.o

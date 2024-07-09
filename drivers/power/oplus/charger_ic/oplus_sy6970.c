@@ -27,6 +27,7 @@
 #include <linux/power_supply.h>
 #include <linux/iio/consumer.h>
 
+#include <linux/rtc.h>
 #include <linux/regulator/driver.h>
 #include <linux/regulator/of_regulator.h>
 #include <linux/regulator/machine.h>
@@ -104,7 +105,7 @@ int __attribute__((weak)) qpnp_get_prop_charger_voltage_now(void)
 
 #define DEFAULT_CV 4435
 #define SY6970_HVDCP_BC12_WORK_DELAY 1500
-#define VSYSMIN_3P5_VAL 5	/* Vsysmin 3.5V */
+#define VSYSMIN_DEFAULT_VAL 0	/* 5: Vsysmin 3.5V; 2:3.2V; 0:3.0v */
 
 #define OPLUS_BC12_RETRY_TIME             round_jiffies_relative(msecs_to_jiffies(200))
 #define OPLUS_BC12_RETRY_TIME_CDP         round_jiffies_relative(msecs_to_jiffies(400))
@@ -1117,8 +1118,9 @@ int sy6970_set_boost_current(struct sy6970 *bq, int curr)
 
 static int sy6970_vmin_limit(struct sy6970 *bq)
 {
-        u8 val = VSYSMIN_3P5_VAL << SY6970_SYS_MINV_SHIFT;
+        u8 val = VSYSMIN_DEFAULT_VAL << SY6970_SYS_MINV_SHIFT;
 
+        chg_info("vsysmin val = %d", val);
         return sy6970_update_bits(bq, SY6970_REG_03,
                                    SY6970_SYS_MINV_MASK, val);
 }
@@ -4389,11 +4391,50 @@ err_nodev:
 
 }
 
+static unsigned long suspend_tm_sec = 0;
+#define INVALID_TIME_VAL -1
+#define SLEEP_DURATION_THR 60
+static int get_rtc_time(unsigned long *rtc_time)
+{
+	struct rtc_time tm;
+	struct rtc_device *rtc;
+	int rc;
+
+	rtc = rtc_class_open(CONFIG_RTC_HCTOSYS_DEVICE);
+	if (rtc == NULL) {
+		pr_err("Failed to open rtc device (%s)\n",
+				CONFIG_RTC_HCTOSYS_DEVICE);
+		return -EINVAL;
+	}
+
+	rc = rtc_read_time(rtc, &tm);
+	if (rc) {
+		pr_err("Failed to read rtc time (%s) : %d\n",
+				CONFIG_RTC_HCTOSYS_DEVICE, rc);
+		goto close_time;
+	}
+
+	rc = rtc_valid_tm(&tm);
+	if (rc) {
+		pr_err("Invalid RTC time (%s): %d\n",
+				CONFIG_RTC_HCTOSYS_DEVICE, rc);
+		goto close_time;
+	}
+	rtc_tm_to_time(&tm, rtc_time);
+
+	close_time:
+		rtc_class_close(rtc);
+		return rc;
+}
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
 static int sy6970_pm_resume(struct device *dev)
 {
 	struct sy6970 *chip = NULL;
 	struct i2c_client *client = to_i2c_client(dev);
+	unsigned long resume_tm_sec = 0;
+	unsigned long sleep_time = 0;
+	int rc = 0;
 
 	chg_err(" suspend stop \n");
 	if (client) {
@@ -4402,6 +4443,16 @@ static int sy6970_pm_resume(struct device *dev)
 			chg_err(" set charger_suspended as 0\n");
 			atomic_set(&chip->charger_suspended, 0);
 			wake_up_interruptible(&g_bq->wait);
+
+			rc = get_rtc_time(&resume_tm_sec);
+			if (rc || suspend_tm_sec == INVALID_TIME_VAL) {
+				chg_err("RTC read failed\n");
+				sleep_time = 0;
+			} else {
+				sleep_time = resume_tm_sec - suspend_tm_sec;
+			}
+			if ((resume_tm_sec > suspend_tm_sec) && (sleep_time > SLEEP_DURATION_THR))
+				oplus_chg_soc_update_when_resume(sleep_time);
 		}
 	}
 	return 0;
@@ -4418,6 +4469,10 @@ static int sy6970_pm_suspend(struct device *dev)
 		if (chip) {
 			chg_err(" set charger_suspended as 1\n");
 			atomic_set(&chip->charger_suspended, 1);
+			if (get_rtc_time(&suspend_tm_sec)) {
+				chg_err("RTC read failed\n");
+				suspend_tm_sec = INVALID_TIME_VAL;
+			}
 		}
 	}
 	return 0;
@@ -4430,28 +4485,42 @@ static const struct dev_pm_ops sy6970_pm_ops = {
 #else
 static int sy6970_resume(struct i2c_client *client)
 {
-       	struct sy6970 *chip = i2c_get_clientdata(client);
+	struct sy6970 *chip = i2c_get_clientdata(client);
+	unsigned long resume_tm_sec = 0;
+	unsigned long sleep_time = 0;
+	int rc = 0;
 
-        if (!chip) {
-                return 0;
-        }
+	if (!chip)
+		return 0;
 
-        atomic_set(&chip->charger_suspended, 0);
+	atomic_set(&chip->charger_suspended, 0);
+	rc = get_rtc_time(&resume_tm_sec);
+	if (rc || suspend_tm_sec == INVALID_TIME_VAL) {
+		chg_err("RTC read failed\n");
+		sleep_time = 0;
+	} else {
+		sleep_time = resume_tm_sec - suspend_tm_sec;
+	}
+	if ((resume_tm_sec > suspend_tm_sec) && (sleep_time > SLEEP_DURATION_THR))
+		oplus_chg_soc_update_when_resume(sleep_time);
 
-        return 0;
+	return 0;
 }
 
 static int sy6970_suspend(struct i2c_client *client, pm_message_t mesg)
 {
-        struct sy6970 *chip = i2c_get_clientdata(client);
+	struct sy6970 *chip = i2c_get_clientdata(client);
 
-        if (!chip) {
-                return 0;
-        }
+	if (!chip)
+		return 0;
 
-        atomic_set(&chip->charger_suspended, 1);
+	atomic_set(&chip->charger_suspended, 1);
+	if (get_rtc_time(&suspend_tm_sec)) {
+		chg_err("RTC read failed\n");
+		suspend_tm_sec = INVALID_TIME_VAL;
+	}
 
-        return 0;
+	return 0;
 }
 #endif
 

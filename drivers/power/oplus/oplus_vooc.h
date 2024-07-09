@@ -513,6 +513,7 @@ void oplus_vooc_reset_temp_range(struct oplus_vooc_chip *chip);
 bool oplus_vooc_get_fw_update_status(void);
 void oplus_vooc_check_set_mcu_sleep(void);
 bool oplus_vooc_get_reset_adapter_st(void);
+void oplus_vooc_set_reset_adapter_false(void);
 int oplus_vooc_get_reset_active_status(void);
 void oplus_vooc_fw_update_work_plug_in(void);
 int oplus_vooc_check_asic_fw_status(void);

@@ -89,6 +89,8 @@ oplus_chg-y += oplus_chg_voter.o
 oplus_chg-y += oplus_chg_comm.o
 oplus_chg-y += oplus_chg_track.o
 oplus_chg-y += ufcs_ic/oplus_sc8547a.o
+oplus_chg-y += ufcs_ic/oplus_nu2112a.o
+oplus_chg-y += ufcs_ic/oplus_nu2112a_slave.o
 oplus_chg-y += oplus_ufcs.o
 oplus_chg-$(CONFIG_OPLUS_DYNAMIC_CONFIG_CHARGER) += op_wlchg_v2/oplus_chg_wls_cfg.o
 

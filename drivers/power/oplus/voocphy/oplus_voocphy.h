@@ -478,6 +478,7 @@ enum {
 	CHIP_ID_DEFAULT = 0,
 	CHIP_ID_SC8547,
 	CHIP_ID_HL7138,
+	CHIP_ID_NU2112A,
 };
 
 enum oplus_voocphy_ovp_ctrl {
@@ -870,6 +871,10 @@ struct oplus_voocphy_operations {
 	int (*adsp_force_svooc)(bool enable);
 	int (*get_adsp_voocphy_enable)(void);
 	int (*reset_voocphy_ovp)(struct oplus_voocphy_manager *chip);
+	int (*set_chg_pmid2out)(bool enable);
+	bool (*get_chg_pmid2out)(void);
+	int (*clk_err_clean)(void);
+	void (*set_fix_mode)(bool val);
 };
 
 #define VOOCPHY_LOG_BUF_LEN 1024
@@ -929,6 +934,11 @@ void oplus_voocphy_set_pdqc_config(void);
 int oplus_voocphy_get_adapter_type(void);
 void oplus_voocphy_set_pdsvooc_adapter_config(struct oplus_voocphy_manager *chip, bool enable);
 bool oplus_voocphy_get_pdsvooc_adapter_config(struct oplus_voocphy_manager *chip);
+void oplus_voocphy_clk_err_clean(void);
+void oplus_voocphy_set_chg_pmid2out(bool enable);
+bool oplus_voocphy_get_chg_pmid2out(void);
+void oplus_voocphy_set_slave_chg_pmid2out(bool enable);
+bool oplus_voocphy_get_slave_chg_pmid2out(void);
 void oplus_voocphy_reset_slave_cp(struct oplus_voocphy_manager *chip);
 bool oplus_voocphy_get_dual_cp_support(void);
 bool oplus_voocphy_get_real_fastchg_allow(void);

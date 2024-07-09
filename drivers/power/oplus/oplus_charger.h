@@ -1283,6 +1283,8 @@ struct oplus_chg_chip {
 	int batt_target_curr;
 	int pre_charging_current;
 	bool aicl_done;
+	bool gsm_call_on;
+	bool gsm_call_ongoing;
 
 	bool support_low_soc_unlimit;
 	int unlimit_soc;
@@ -1782,5 +1784,6 @@ int oplus_get_ccdetect_online(void);
 #if IS_ENABLED(CONFIG_OPLUS_CHG_TEST_KIT)
 void oplus_test_kit_unregister(void);
 #endif
+bool oplus_chg_get_gsm_call_on(void);
 //#endif
 #endif /*_OPLUS_CHARGER_H_*/

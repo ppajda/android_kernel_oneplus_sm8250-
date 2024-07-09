@@ -2388,9 +2388,8 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 					} else {
 						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_OFF);
 					}
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "AMB655XL08")) {
-						display->panel->is_hbm_enabled = false;
-					}
+					display->panel->is_hbm_enabled = false;
+
 					oplus_update_aod_light_mode_unlock(display->panel);
 				} else {
 					pr_err("[%s][%d]failed to setting dsi command", __func__, __LINE__);
@@ -2445,8 +2444,7 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 							dsi_panel_tx_cmd_set(display->panel, DSI_CMD_HBM_ON);
 						}
 					}
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "AMB655XL08")
-						|| !strcmp(display->panel->oplus_priv.vendor_name, "AMB655X")) {
+					if (!oplus_dimlayer_bl_enable_v2) {
 						display->panel->is_hbm_enabled = true;
 					}
 				} else {

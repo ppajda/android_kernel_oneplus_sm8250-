@@ -2346,7 +2346,7 @@ int mt_power_supply_type_check(void)
 		charger_type = POWER_SUPPLY_TYPE_USB_CDP;
 		break;
 	case NONSTANDARD_CHARGER:
-	case STANDARD_CHARGER:	
+	case STANDARD_CHARGER:
 	case APPLE_2_1A_CHARGER:
 	case APPLE_1_0A_CHARGER:
 	case APPLE_0_5A_CHARGER:

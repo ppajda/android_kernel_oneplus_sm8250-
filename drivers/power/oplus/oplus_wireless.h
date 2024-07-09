@@ -578,7 +578,7 @@ struct wpc_data{
 	char random_num[8];
 	char noise_num[9];
 	char rx_encode_num[8];
-	char tx_encode_num[8];
+	char tx_encode_num[WLS_AUTH_AES_DATA_LEN];
 	int dock_verify_retry;
 	int dock_verify_status;
 	unsigned long dock_verify_start;

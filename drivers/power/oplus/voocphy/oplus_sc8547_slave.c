@@ -671,10 +671,30 @@ static int sc8547_slave_parse_dt(struct oplus_voocphy_manager *chip)
 	return 0;
 }
 
+static int sc8547_slave_charger_choose(struct oplus_voocphy_manager *chip)
+{
+	int ret;
+
+	if (oplus_voocphy_chip_is_null()) {
+		pr_err("oplus_voocphy_chip null, will do after master cp init!");
+		return -EPROBE_DEFER;
+	} else {
+		ret = i2c_smbus_read_byte_data(chip->slave_client, 0x07);
+		pr_err("0x07 = %d\n", ret);
+		if (ret < 0) {
+			pr_err("i2c communication fail");
+			return -EPROBE_DEFER;
+		}
+		else
+			return 1;
+	}
+}
+
 static int sc8547_slave_charger_probe(struct i2c_client *client,
                                       const struct i2c_device_id *id)
 {
 	struct oplus_voocphy_manager *chip;
+	int ret;
 
 	pr_err("sc8547_slave_slave_charger_probe enter!\n");
 
@@ -689,10 +709,10 @@ static int sc8547_slave_charger_probe(struct i2c_client *client,
 	mutex_init(&i2c_rw_lock);
 	i2c_set_clientdata(client, chip);
 
-	if (oplus_voocphy_chip_is_null()) {
-		pr_err("oplus_voocphy_chip null, will do after master cp init.\n");
-		return -EPROBE_DEFER;
-	}
+	ret = sc8547_slave_charger_choose(chip);
+	if (ret <= 0)
+		return ret;
+
 	sc8547a_hw_version_check(chip);
 
 	sc8547_slave_create_device_node(&(client->dev));

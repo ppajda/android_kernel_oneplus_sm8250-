@@ -4084,6 +4084,7 @@ static void bq27541_parse_dt(struct chip_bq27541 *chip)
 	chip->modify_soc_calibration = of_property_read_bool(node, "qcom,modify-soc-calibration");
 	chip->batt_bq28z610 = of_property_read_bool(node, "qcom,batt_bq28z610");
 	chip->bq28z610_need_balancing = of_property_read_bool(node, "qcom,bq28z610_need_balancing");
+	chip->enable_sleep_mode = of_property_read_bool(node, "oplus,enable_sleep_mode");
 
 	/* only for wite battery full param in guage dirver probe on 7250 platform */
 	chip->battery_full_param = of_property_read_bool(node, "qcom,battery-full-param");
@@ -4905,7 +4906,7 @@ static int bq27441_battery_full_sleep_mode_cmd(struct chip_bq27541 *chip, bool e
 			pr_err("%s write {0xFF,0x55} --> 0x40\n", __func__);
 			usleep_range(500000, 500000);
 		}
-	} else if (opchg_get_shipmode_value() == 1) {
+	} else if (chip->enable_sleep_mode || opchg_get_shipmode_value() == 1) {
 		if (read_buf[1] != 0x31) {
 			bq27541_write_i2c_block(chip, 0x40, 10, CNTL1_VAL_3);
 			usleep_range(5000, 5000);
@@ -5025,8 +5026,12 @@ static int bq27411_modify_soc_smooth_parameter(struct chip_bq27541 *chip, bool i
 
 	if (chip->device_type == DEVICE_ZY0602) {
 		pr_err("%s  DEVICE_ZY0602 begin\n", __func__);
-		pr_err("%s  device_type = %d\n", __func__, chip->device_type);
-		bq27411_write_soc_smooth_parameter_for_zy(chip, is_powerup);
+		pr_err("%s  device_type = %d enable_sleep_mode=%d\n", __func__,
+			chip->device_type, chip->enable_sleep_mode);
+		if (chip->enable_sleep_mode)
+			bq27411_write_soc_smooth_parameter_for_zy(chip, false);
+		else
+			bq27411_write_soc_smooth_parameter_for_zy(chip, is_powerup);
 		return GAUGE_OK;
 	}
 

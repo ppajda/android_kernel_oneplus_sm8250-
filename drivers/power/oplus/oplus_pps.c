@@ -313,6 +313,15 @@ static int oplus_pps_parse_charge_strategy(struct oplus_pps_chip *chip)
 			chip->limits.pps_strategy_normal_current);
 	}
 
+	rc = of_property_read_u32(node, "oplus,pps_strategy_normal_bypass_limit_current",
+	&chip->limits.pps_strategy_normal_bypass_limit_current);
+	if (rc) {
+		chip->limits.pps_strategy_normal_bypass_limit_current = 12000;
+	} else {
+		pps_err("oplus,pps_strategy_normal_bypass_limit_current is %d\n",
+		chip->limits.pps_strategy_normal_bypass_limit_current);
+	}
+
 	rc = of_property_read_u32(node, "oplus,pps_over_high_or_low_current",
 				  &chip->limits.pps_over_high_or_low_current);
 	if (rc) {
@@ -1962,6 +1971,11 @@ static int oplus_pps_get_batt_temp_curr(struct oplus_pps_chip *chip)
 		chip->pps_temp_cur_range);
 
 	chip->ilimit.current_batt_temp = ret * oplus_pps_get_icurr_ratio();
+	if (chip->cp_mode == PPS_BYPASS_MODE) {
+		if ((oplus_pps_get_support_type() == PPS_SUPPORT_3CP) &&
+			(chip->ilimit.current_batt_temp > chip->limits.pps_strategy_normal_bypass_limit_current))
+			chip->ilimit.current_batt_temp = chip->limits.pps_strategy_normal_bypass_limit_current;
+	}
 	return ret;
 }
 

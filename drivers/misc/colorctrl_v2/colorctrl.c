@@ -1517,14 +1517,14 @@ static ssize_t proc_ageing_para_read(struct file *file, char __user *user_buf, s
 	str = kzalloc(MAX_AGING_VOL_DATA, GFP_KERNEL);
 	if (IS_ERR(str) || str == NULL) {
 		COLOR_INFO("str is null or err\n");
-		kfree(str);
+		/*kfree(str);*/
 		goto OUT;
 	}
 
 	fp = filp_open(AGING_VOL_PATH, O_RDWR | O_CREAT, EC_CHMOD);
 	if(IS_ERR(fp)) {
 		COLOR_INFO("Can not open file %s\n", AGING_VOL_PATH);
-		filp_close(fp, NULL);
+		/*filp_close(fp, NULL);*/
 		kfree(str);
 		goto OUT;
 	}
@@ -1599,7 +1599,7 @@ static ssize_t proc_ageing_para_write(struct file *file, const char __user *buff
 
 	str = kzalloc(MAX_AGING_VOL_DATA, GFP_KERNEL);
 	if (IS_ERR(str) || str == NULL) {
-		kfree(str);
+		/*kfree(str);*/
 		goto OUT;
 	}
 
@@ -1609,7 +1609,7 @@ static ssize_t proc_ageing_para_write(struct file *file, const char __user *buff
 	if(IS_ERR(fp)) {
 		COLOR_INFO("Can not open file %s\n", AGING_VOL_PATH);
 		kfree(str);
-		filp_close(fp, NULL);
+		/*filp_close(fp, NULL);*/
 		goto OUT;
 	}
 

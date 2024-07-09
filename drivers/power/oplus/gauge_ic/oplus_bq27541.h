@@ -531,6 +531,7 @@ struct chip_bq27541 {
 	bool batt_bq28z610;
 	bool batt_zy0603;
 	bool bq28z610_need_balancing;
+	bool enable_sleep_mode;
 	int bq28z610_device_chem;
 	int gauge_num;
 	struct mutex chip_mutex;

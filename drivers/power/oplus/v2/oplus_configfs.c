@@ -736,6 +736,7 @@ int __attribute__((weak)) oplus_gauge_set_bcc_parameters(const char *buf)
 }
 
 #define VOOC_MCU_PROJECT 7
+#define VOOC_MCU_PROJECT_100W	8
 static ssize_t bcc_parms_show(struct device *dev, struct device_attribute *attr,
 		char *buf)
 {
@@ -746,6 +747,7 @@ static ssize_t bcc_parms_show(struct device *dev, struct device_attribute *attr,
 	int rc;
 	bool fastchg_started = false;
 	int vooc_project = 0;
+	int chg_type = oplus_wired_get_chg_type();
 
 	if (!chip) {
 		chg_err("chip is NULL\n");
@@ -765,7 +767,10 @@ static ssize_t bcc_parms_show(struct device *dev, struct device_attribute *attr,
 
 	fastchg_started = data.intval;
 
-	if (vooc_project == VOOC_MCU_PROJECT)
+	/* I2C access conflict may occur when using MCU fast charging scheme.
+	   only SVOOC charging need to get the bcc parameters.*/
+	if ((vooc_project == VOOC_MCU_PROJECT || vooc_project == VOOC_MCU_PROJECT_100W)
+		&& chg_type == OPLUS_CHG_USB_TYPE_SVOOC)
 		val = oplus_gauge_get_prev_bcc_parameters(buf);
 	else
 		val = oplus_gauge_get_bcc_parameters(buf);

@@ -6292,7 +6292,10 @@ int oplus_mt6360_pd_setup(void)
 				vbus_mv = VBUS_5V;
 				ibus_ma = IBUS_2A;
 			}
-
+			if (!pinfo->data.dual_charger_support) {
+				vbus_mv = VBUS_5V;
+				ibus_ma = IBUS_3A;
+			}
 			printk(KERN_ERR "PD request: %dmV, %dmA\n", vbus_mv, ibus_ma);
 			ret = oplus_pdc_setup(&vbus_mv, &ibus_ma);
 		} else {
@@ -6301,7 +6304,10 @@ int oplus_mt6360_pd_setup(void)
 				|| chip->temperature > 420 || chip->cool_down_force_5v == true)) {
 				vbus_mv = VBUS_5V;
 				ibus_ma = IBUS_3A;
-
+				if (!pinfo->data.dual_charger_support) {
+					vbus_mv = VBUS_5V;
+					ibus_ma = IBUS_3A;
+				}
 				printk(KERN_ERR "PD request: %dmV, %dmA\n", vbus_mv, ibus_ma);
 				ret = oplus_pdc_setup(&vbus_mv, &ibus_ma);
 			}

@@ -3261,6 +3261,16 @@ bool oplus_vooc_get_reset_adapter_st(void)
 	}
 }
 
+void oplus_vooc_set_reset_adapter_false(void)
+{
+	if (!g_vooc_chip) {
+		return;
+	} else {
+		g_vooc_chip->reset_adapter = false;
+	}
+	return;
+}
+
 int oplus_vooc_get_abnormal_adapter_current_cnt(void)
 {
 	if (!g_vooc_chip) {

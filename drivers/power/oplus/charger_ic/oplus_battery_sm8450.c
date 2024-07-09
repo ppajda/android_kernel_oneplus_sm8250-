@@ -2917,7 +2917,7 @@ static int battery_psy_get_prop(struct power_supply *psy,
 					pval->intval = chip->prop_status;
 
 				if ((oplus_is_vooc_project() == DUAL_BATT_150W || oplus_is_vooc_project() == DUAL_BATT_240W)
-					&& oplus_quirks_keep_connect_status())
+					&& oplus_quirks_keep_connect_status() && chip->mmi_chg)
 					pval->intval = chip->keep_prop_status;
 			} else if (!chip->authenticate) {
 				pval->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;

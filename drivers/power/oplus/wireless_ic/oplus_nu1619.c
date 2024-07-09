@@ -469,8 +469,8 @@ static int nu1619_get_aes_data6(struct oplus_nu1619_ic *chip)
 	nu1619_write_reg(chip, 0x0000, 0x48);
 	nu1619_write_reg(chip, 0x0001, P9221_CMD_GET_AES_DATA6);
 	nu1619_write_reg(chip, 0x0002, chip->nu1619_chg_status.aes_verfith_data.aes_encode_num[15]);
-	nu1619_write_reg(chip, 0x0003, chip->nu1619_chg_status.aes_verfith_data.aes_encode_num[16]);
-	nu1619_write_reg(chip, 0x0004, chip->nu1619_chg_status.aes_verfith_data.aes_encode_num[17]);
+	nu1619_write_reg(chip, 0x0003, 0xFF);
+	nu1619_write_reg(chip, 0x0004, 0xFF);
 	nu1619_write_cmd_D(chip, 0x01);
 
 	return 0;

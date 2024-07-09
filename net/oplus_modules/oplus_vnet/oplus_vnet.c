@@ -17,8 +17,13 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/moduleparam.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
+#include <linux/version.h>
 #include <net/pkt_sched.h>
 #include <net/net_namespace.h>
+#include <net/ipv6.h>
+#include <net/addrconf.h>
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/netfilter_ipv6.h>

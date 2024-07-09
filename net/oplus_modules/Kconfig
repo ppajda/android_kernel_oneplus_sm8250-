@@ -8,3 +8,5 @@ source "net/oplus_modules/oplus_stats_calc/Kconfig"
 source "net/oplus_modules/oplus_qr_scan/Kconfig"
 
 source "net/oplus_modules/data_module/Kconfig"
+
+source "net/oplus_modules/oplus_vnet/Kconfig"

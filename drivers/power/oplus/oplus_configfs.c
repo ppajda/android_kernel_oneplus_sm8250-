@@ -516,6 +516,49 @@ static ssize_t call_mode_store(struct device *dev, struct device_attribute *attr
 static DEVICE_ATTR_RW(call_mode);
 #endif /*CONFIG_OPLUS_CALL_MODE_SUPPORT*/
 
+static ssize_t gsm_call_ongoing_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct oplus_chg_chip *chip = NULL;
+
+	chip = (struct oplus_chg_chip *)dev_get_drvdata(oplus_battery_dir);
+	if (!chip) {
+		chg_err("chip is NULL\n");
+		return -EINVAL;
+	}
+
+	return sprintf(buf, "%d\n", chip->gsm_call_ongoing);
+}
+
+static ssize_t gsm_call_ongoing_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+	int val = 0;
+	struct oplus_chg_chip *chip = NULL;
+	struct oplus_voocphy_manager *voocphy_chip = NULL;
+	if (oplus_chg_get_gsm_call_on() == true) {
+		chip = (struct oplus_chg_chip *)dev_get_drvdata(oplus_battery_dir);
+		if (!chip) {
+			chg_err("chip is NULL\n");
+			return -EINVAL;
+		}
+
+		oplus_voocphy_get_chip(&voocphy_chip);
+		if (!voocphy_chip)
+			return -EINVAL;
+
+		if (kstrtos32(buf, 0, &val)) {
+			chg_err("buf error\n");
+			return -EINVAL;
+		}
+		chip->gsm_call_ongoing = val;
+		chg_err("set val [%d]\n", chip->gsm_call_ongoing);
+
+		if (voocphy_chip->ops && voocphy_chip->ops->set_fix_mode)
+			voocphy_chip->ops->set_fix_mode(chip->gsm_call_ongoing);
+	}
+	return count;
+}
+static DEVICE_ATTR_RW(gsm_call_ongoing);
+
 static ssize_t charge_technology_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct oplus_chg_chip *chip = NULL;
@@ -1714,6 +1757,7 @@ static struct device_attribute *oplus_battery_attributes[] = {
 #ifdef CONFIG_OPLUS_CALL_MODE_SUPPORT
 	&dev_attr_call_mode,
 #endif
+	&dev_attr_gsm_call_ongoing,
 	&dev_attr_charge_technology,
 #ifdef CONFIG_OPLUS_CHIP_SOC_NODE
 	&dev_attr_chip_soc,

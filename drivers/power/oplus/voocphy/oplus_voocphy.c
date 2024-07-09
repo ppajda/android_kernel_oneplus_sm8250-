@@ -3612,6 +3612,10 @@ irqreturn_t oplus_voocphy_interrupt_handler(struct oplus_voocphy_manager *chip)
 		} else {
 			voocphy_info("!RX_START_FLAG & TXDATA_WR_FAIL_FLAG occured do nothing");
 		}
+	} else if ((chip->vooc_flag & NINTH_CLK_ERR_FLAG_MASK) && (chip->chip_id == CHIP_ID_NU2112A)) {
+			voocphy_err("NINTH_CLK_ERR_FLAG_MASK");
+			oplus_voocphy_clk_err_clean();
+			goto handle_done;
 	} else if (chip->vooc_flag & RXDATA_DONE_FLAG_MASK) {	//rxdata recv done
 
 		chip->irq_rcvok_num++;
@@ -5896,6 +5900,7 @@ int oplus_voocphy_curr_event_handle(unsigned long data)
 	static unsigned char curr_curve_pwd_count = 10;
 	u8 slave_cp_enable;
 	bool pd_svooc_status;
+	bool pmid2out_status = true;
 	int chg_temp = oplus_chg_get_chg_temperature();
 	int i;
 	bool low_curr = false;
@@ -5969,6 +5974,20 @@ int oplus_voocphy_curr_event_handle(unsigned long data)
 		} else {
 			disable_sub_cp_count = 0;
 			voocphy_err("Discontinuity satisfies the condition, count = 0!\n");
+		}
+		if (chip->chip_id == CHIP_ID_NU2112A) {
+			pmid2out_status = oplus_voocphy_get_chg_pmid2out();
+			voocphy_err("pmid2out master = %d, chip->master_cp_ichg = %d\n", pmid2out_status, chip->master_cp_ichg);
+			if (pmid2out_status == false && chip->master_cp_ichg > 500) {
+				voocphy_err("IBUS > 500mA set 0x5 to 0x28!\n");
+				oplus_voocphy_set_chg_pmid2out(true);
+			}
+			pmid2out_status = oplus_voocphy_get_slave_chg_pmid2out();
+			voocphy_err("pmid2out slave = %d, chip->cp_ichg = %d\n", pmid2out_status, chip->cp_ichg);
+			if (pmid2out_status == false && (chip->cp_ichg - chip->master_cp_ichg)> 500) {
+				voocphy_err("IBUS > 500mA set 0x5 to 0x28!\n");
+				oplus_voocphy_set_slave_chg_pmid2out(true);
+			}
 		}
 	}
 
@@ -7582,6 +7601,66 @@ bool oplus_voocphy_get_pdsvooc_adapter_config(struct oplus_voocphy_manager *chip
 
 	if (chip->ops && chip->ops->get_pd_svooc_config) {
 		return chip->ops->get_pd_svooc_config(chip);
+	} else {
+		return false;
+	}
+}
+
+void oplus_voocphy_clk_err_clean(void)
+{
+	if (!g_voocphy_chip)
+		return;
+
+	if (g_voocphy_chip->ops && g_voocphy_chip->ops->clk_err_clean) {
+		g_voocphy_chip->ops->clk_err_clean();
+	} else {
+		return;
+	}
+}
+
+void oplus_voocphy_set_chg_pmid2out(bool enable)
+{
+	if (!g_voocphy_chip)
+		return;
+
+	if (g_voocphy_chip->ops && g_voocphy_chip->ops->set_chg_pmid2out) {
+		g_voocphy_chip->ops->set_chg_pmid2out(enable);
+	} else {
+		return;
+	}
+}
+
+bool oplus_voocphy_get_chg_pmid2out(void)
+{
+	if (!g_voocphy_chip)
+		return false;
+
+	if (g_voocphy_chip->ops && g_voocphy_chip->ops->get_chg_pmid2out) {
+		return g_voocphy_chip->ops->get_chg_pmid2out();
+	} else {
+		return false;
+	}
+}
+
+void oplus_voocphy_set_slave_chg_pmid2out(bool enable)
+{
+	if (!g_voocphy_chip)
+		return;
+
+	if (g_voocphy_chip->slave_ops && g_voocphy_chip->slave_ops->set_chg_pmid2out) {
+		g_voocphy_chip->slave_ops->set_chg_pmid2out(enable);
+	} else {
+		return;
+	}
+}
+
+bool oplus_voocphy_get_slave_chg_pmid2out(void)
+{
+	if (!g_voocphy_chip)
+		return false;
+
+	if (g_voocphy_chip->slave_ops && g_voocphy_chip->slave_ops->get_chg_pmid2out) {
+		return g_voocphy_chip->slave_ops->get_chg_pmid2out();
 	} else {
 		return false;
 	}

@@ -6008,32 +6008,24 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 				      size_t count, loff_t *lo)
 {
 	struct aw_haptic *aw_haptic = (struct aw_haptic *)filp->private_data;
-	char *buffer = NULL;
+	char buffer[5] = { 0 };
 	int rc = 0;
 	int val;
-
-	buffer = (char *)kzalloc(count, GFP_KERNEL);
-	if(buffer == NULL || buf == NULL) {
-		aw_dev_err("%s: alloc memory fail\n", __func__);
-		return count;
-	}
 	if (count > sizeof(buffer)) {
 		return -EFAULT;
 	}
+	if (buf == NULL) {
+		return -EFAULT;
+	}
 	if (copy_from_user(buffer, buf, count)) {
-		if(buffer != NULL) {
-			kfree(buffer);
-		}
 		aw_dev_err("%s: error.\n", __func__);
-		return count;
+		return -EFAULT;
 	}
 
 	aw_dev_err("buffer=%s", buffer);
 	rc = kstrtoint(buffer, 0, &val);
-	if (rc < 0) {
-		kfree(buffer);
+	if (rc < 0)
 		return count;
-	}
 	aw_dev_err("val = %d", val);
 
 	if (val == 0) {
@@ -6045,7 +6037,6 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 	} else {
 		aw_haptic->vibration_style = AW_HAPTIC_VIBRATION_CRISP_STYLE;
 	}
-	kfree(buffer);
 	return count;
 }
 

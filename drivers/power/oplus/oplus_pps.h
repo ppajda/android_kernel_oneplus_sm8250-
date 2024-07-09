@@ -471,6 +471,7 @@ struct oplus_pps_limits {
 	int pps_strategy_soc_num;
 
 	int pps_strategy_normal_current;
+	int pps_strategy_normal_bypass_limit_current;
 	int pps_strategy_batt_high_temp0;
 	int pps_strategy_batt_high_temp1;
 	int pps_strategy_batt_high_temp2;
