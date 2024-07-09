@@ -40,6 +40,10 @@
 #include <soc/oplus/system/oplus_signal.h>
 #endif
 
+#ifdef CONFIG_LOCKING_PROTECT
+#include <linux/sched_assist/sched_assist_locking.h>
+#endif
+
 void
 __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 {
@@ -279,6 +283,9 @@ void __sched mutex_lock(struct mutex *lock)
 {
 	might_sleep();
 
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	if (!__mutex_trylock_fast(lock))
 		__mutex_lock_slowpath(lock);
 }
@@ -752,6 +759,9 @@ static noinline void __sched __mutex_unlock_slowpath(struct mutex *lock, unsigne
  */
 void __sched mutex_unlock(struct mutex *lock)
 {
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, 0);
+#endif
 #ifndef CONFIG_DEBUG_LOCK_ALLOC
 	if (__mutex_unlock_fast(lock))
 		return;
@@ -1018,7 +1028,9 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	}
 
 	waiter.task = current;
-
+#ifdef CONFIG_LOCKING_PROTECT
+	update_locking_time(jiffies, false);
+#endif
 	set_current_state(state);
 	for (;;) {
 		bool first;
@@ -1136,6 +1148,9 @@ void __sched
 mutex_lock_nested(struct mutex *lock, unsigned int subclass)
 {
 	__mutex_lock(lock, TASK_UNINTERRUPTIBLE, subclass, NULL, _RET_IP_);
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 }
 
 EXPORT_SYMBOL_GPL(mutex_lock_nested);
@@ -1144,12 +1159,18 @@ void __sched
 _mutex_lock_nest_lock(struct mutex *lock, struct lockdep_map *nest)
 {
 	__mutex_lock(lock, TASK_UNINTERRUPTIBLE, 0, nest, _RET_IP_);
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 }
 EXPORT_SYMBOL_GPL(_mutex_lock_nest_lock);
 
 int __sched
 mutex_lock_killable_nested(struct mutex *lock, unsigned int subclass)
 {
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	return __mutex_lock(lock, TASK_KILLABLE, subclass, NULL, _RET_IP_);
 }
 EXPORT_SYMBOL_GPL(mutex_lock_killable_nested);
@@ -1157,6 +1178,9 @@ EXPORT_SYMBOL_GPL(mutex_lock_killable_nested);
 int __sched
 mutex_lock_interruptible_nested(struct mutex *lock, unsigned int subclass)
 {
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	return __mutex_lock(lock, TASK_INTERRUPTIBLE, subclass, NULL, _RET_IP_);
 }
 EXPORT_SYMBOL_GPL(mutex_lock_interruptible_nested);
@@ -1168,6 +1192,9 @@ mutex_lock_io_nested(struct mutex *lock, unsigned int subclass)
 
 	might_sleep();
 
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	token = io_schedule_prepare();
 	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE,
 			    subclass, NULL, _RET_IP_, NULL, 0);
@@ -1207,6 +1234,9 @@ ww_mutex_lock(struct ww_mutex *lock, struct ww_acquire_ctx *ctx)
 	int ret;
 
 	might_sleep();
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	ret =  __ww_mutex_lock(&lock->base, TASK_UNINTERRUPTIBLE,
 			       0, ctx ? &ctx->dep_map : NULL, _RET_IP_,
 			       ctx);
@@ -1223,6 +1253,9 @@ ww_mutex_lock_interruptible(struct ww_mutex *lock, struct ww_acquire_ctx *ctx)
 	int ret;
 
 	might_sleep();
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	ret = __ww_mutex_lock(&lock->base, TASK_INTERRUPTIBLE,
 			      0, ctx ? &ctx->dep_map : NULL, _RET_IP_,
 			      ctx);
@@ -1332,6 +1365,9 @@ int __sched mutex_lock_interruptible(struct mutex *lock)
 {
 	might_sleep();
 
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	if (__mutex_trylock_fast(lock))
 		return 0;
 
@@ -1356,6 +1392,9 @@ int __sched mutex_lock_killable(struct mutex *lock)
 {
 	might_sleep();
 
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	if (__mutex_trylock_fast(lock))
 		return 0;
 
@@ -1377,6 +1416,9 @@ void __sched mutex_lock_io(struct mutex *lock)
 {
 	int token;
 
+#ifdef CONFIG_LOCKING_PROTECT
+	record_locking_info(current, jiffies);
+#endif
 	token = io_schedule_prepare();
 	mutex_lock(lock);
 	io_schedule_finish(token);
@@ -1436,8 +1478,12 @@ int __sched mutex_trylock(struct mutex *lock)
 {
 	bool locked = __mutex_trylock(lock);
 
-	if (locked)
+	if (locked) {
+		#ifdef CONFIG_LOCKING_PROTECT
+		record_locking_info(current, jiffies);
+		#endif
 		mutex_acquire(&lock->dep_map, 0, 1, _RET_IP_);
+	}
 
 	return locked;
 }
