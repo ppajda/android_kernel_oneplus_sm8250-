@@ -12,11 +12,8 @@
 #include <linux/stddef.h>
 #include <linux/types.h>
 #include <linux/uidgid.h>
-#ifdef CONFIG_OPLUS_FEATURE_CPU_JANKINFO
 #include "binder_alloc.h"
-#endif
-
-
+#include "dbitmap.h"
 struct binder_context {
 	struct binder_node *binder_context_mgr_node;
 	struct mutex context_mgr_node_lock;
@@ -385,6 +382,8 @@ struct binder_priority {
  * @proc_node:            element for binder_procs list
  * @threads:              rbtree of binder_threads in this proc
  *                        (protected by @inner_lock)
+ * @dmap                  dbitmap to manage available reference descriptors
+ *                        (protected by @outer_lock)
  * @nodes:                rbtree of binder nodes associated with
  *                        this proc ordered by node->ptr
  *                        (protected by @inner_lock)
@@ -458,7 +457,7 @@ struct binder_proc {
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 	int proc_type;
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
+	struct dbitmap dmap;
 	struct list_head todo;
 	struct binder_stats stats;
 	struct list_head delivered_death;
