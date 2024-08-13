@@ -262,14 +262,9 @@ static int f2fs_match_ci_name(const struct inode *dir, const struct qstr *name,
 		res = (res == 0);
 	}
 out:
-<<<<<<< HEAD
-	kfree(decrypted_name.name);
-	return res;
-=======
 	if (decrypted_name.name != decname_onstack)
 		kfree(decrypted_name.name);
 	return res == 0;
->>>>>>> 181a25f095a35 (f2fs: Avoid dynamic memory allocation in f2fs_match_ci_name())
 }
 #endif /* CONFIG_UNICODE */
 
