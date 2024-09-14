@@ -240,16 +240,11 @@ static unsigned long
 calc_rate(unsigned long rate, u32 m, u32 n, u32 mode, u32 hid_div)
 {
 	u64 tmp = rate;
+	if (hid_div)
+		tmp = mult_frac(tmp, 2, hid_div + 1);
 
-	if (hid_div) {
-		tmp *= 2;
-		do_div(tmp, hid_div + 1);
-	}
-
-	if (mode) {
-		tmp *= m;
-		do_div(tmp, n);
-	}
+	if (mode)
+		tmp = mult_frac(tmp, m, n);
 
 	return tmp;
 }
