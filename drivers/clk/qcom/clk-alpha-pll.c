@@ -44,7 +44,7 @@
 
 #define PLL_USER_CTL(p)		((p)->offset + (p)->regs[PLL_OFF_USER_CTL])
 #define PLL_POST_DIV_SHIFT	8
-#define PLL_POST_DIV_MASK(p)	GENMASK((p)->width, 0)
+# define PLL_POST_DIV_MASK(p)	GENMASK((p)->width - 1, 0)
 #define PLL_ALPHA_EN		BIT(24)
 #define PLL_ALPHA_MODE		BIT(25)
 #define PLL_VCO_SHIFT		20
@@ -2764,3 +2764,4 @@ const struct clk_ops clk_alpha_pll_slew_ops = {
 	.set_rate = clk_alpha_pll_slew_set_rate,
 	.list_registers = clk_alpha_pll_list_registers,
 };
+
