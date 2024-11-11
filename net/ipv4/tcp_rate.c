@@ -73,8 +73,10 @@ void tcp_rate_skb_sent(struct sock *sk, struct sk_buff *skb)
 	  * bandwidth estimate.
 	  */
 	if (!tp->packets_out) {
-		tp->first_tx_mstamp  = skb->skb_mstamp;
-		tp->delivered_mstamp = skb->skb_mstamp;
+		u64 tstamp_us = tcp_skb_timestamp_us(skb);
+
+		tp->first_tx_mstamp  = tstamp_us;
+		tp->delivered_mstamp = tstamp_us;
 	}
 
 	TCP_SKB_CB(skb)->tx.first_tx_mstamp	= tp->first_tx_mstamp;
@@ -112,13 +114,12 @@ void tcp_rate_skb_delivered(struct sock *sk, struct sk_buff *skb,
 		rs->is_retrans	     = scb->sacked & TCPCB_RETRANS;
 		rs->tx_in_flight     = scb->tx.in_flight;
 
-		/* Find the duration of the "send phase" of this window: */
-		rs->interval_us      = tcp_stamp32_us_delta(
-						tp->first_tx_mstamp,
-						scb->tx.first_tx_mstamp);
-
 		/* Record send time of most recently ACKed packet: */
-		tp->first_tx_mstamp  = skb->skb_mstamp;
+		tp->first_tx_mstamp  = tcp_skb_timestamp_us(skb);
+		/* Find the duration of the "send phase" of this window: */
+		rs->interval_us = tcp_stamp32_us_delta(tp->first_tx_mstamp,
+						     scb->tx.first_tx_mstamp);
+
 	}
 	/* Mark off the skb delivered once it's sacked to avoid being
 	 * used again when it's cumulatively acked. For acked packets
