@@ -565,11 +565,6 @@ out:
 		sbi->gc_remaining_trials = t;
 		spin_unlock(&sbi->gc_remaining_trials_lock);
 
-	if (!strcmp(a->attr.name, "gc_booster")) {
-		sbi->gc_booster = !!t;
-		return count;
-	}
-
 		return count;
 	}
 
@@ -932,7 +927,6 @@ NM_INFO_GENERAL_RW_ATTR(dirty_nats_ratio);
 F2FS_RW_ATTR(F2FS_SBI, f2fs_super_block, extension_list, extension_list);
 F2FS_SBI_RW_ATTR(gc_idle, gc_mode);
 F2FS_SBI_RW_ATTR(gc_urgent, gc_mode);
-F2FS_SBI_RW_ATTR(gc_booster, gc_booster);
 F2FS_SBI_RW_ATTR(cp_interval, interval_time[CP_TIME]);
 F2FS_SBI_RW_ATTR(idle_interval, interval_time[REQ_TIME]);
 F2FS_SBI_RW_ATTR(discard_idle_interval, interval_time[DISCARD_TIME]);
@@ -1057,7 +1051,6 @@ static struct attribute *f2fs_attrs[] = {
 	ATTR_LIST(gc_no_gc_sleep_time),
 	ATTR_LIST(gc_idle),
 	ATTR_LIST(gc_urgent),
-	ATTR_LIST(gc_booster),
 	ATTR_LIST(reclaim_segments),
 	ATTR_LIST(main_blkaddr),
 	ATTR_LIST(max_small_discards),
