@@ -3289,6 +3289,7 @@ int f2fs_allocate_data_block(struct f2fs_sb_info *sbi, struct page *page,
 		sanity_check_seg_type(sbi, se->type);
 		f2fs_bug_on(sbi, IS_NODESEG(se->type));
 	}
+
 	if (curseg->segno == NULL_SEGNO)
 		goto out_err;
 
