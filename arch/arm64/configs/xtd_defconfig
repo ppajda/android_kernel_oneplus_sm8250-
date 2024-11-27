@@ -1,10 +1,10 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.19.322 Kernel Configuration
+# Linux/arm64 4.19.324 Kernel Configuration
 #
 
 #
-# Compiler: XTD clang version 20.0.0git (https://github.com/llvm/llvm-project ca1154d1d41c75db6594428a8cdf263cf7041896)
+# Compiler: XTD clang version 20.0.0git (https://github.com/llvm/llvm-project 2af6ddb8a2cdc2a9a8a84a6244905bf9158cca8b)
 #
 CONFIG_OPLUS_SYSTEM_KERNEL_QCOM=y
 # CONFIG_OPLUS_SYSTEM_KERNEL_MTK is not set
@@ -777,6 +777,7 @@ CONFIG_QUEUED_SPINLOCKS=y
 CONFIG_ARCH_USE_QUEUED_RWLOCKS=y
 CONFIG_QUEUED_RWLOCKS=y
 CONFIG_RWSEM_PRIO_AWARE=y
+# CONFIG_LOCKING_PROTECT is not set
 CONFIG_ARCH_HAS_SYSCALL_WRAPPER=y
 # CONFIG_GKI_HIDDEN_DRM_CONFIGS is not set
 # CONFIG_GKI_HIDDEN_REGMAP_CONFIGS is not set
@@ -1451,6 +1452,7 @@ CONFIG_OPLUS_FEATURE_DNS_HOOK=y
 CONFIG_OPLUS_FEATURE_STATS_CALC=y
 # CONFIG_OPLUS_FEATURE_QR_SCAN is not set
 # CONFIG_OPLUS_FEATURE_DATA_MODULE is not set
+# CONFIG_OPLUS_FEATURE_VIRTUAL_NET is not set
 
 #
 # Device Drivers
@@ -4883,6 +4885,7 @@ CONFIG_OPLUS_GPIO=y
 # CONFIG_NANDSWAP is not set
 # CONFIG_NANDSWAP_DEBUG is not set
 # CONFIG_OPLUS_FEATURE_GAME_OPT is not set
+# CONFIG_OPLUS_FEATURE_ABNORMAL_FLAG is not set
 CONFIG_PM_DEVFREQ=y
 
 #
@@ -5630,6 +5633,7 @@ CONFIG_NLS_ISO8859_1=y
 CONFIG_NLS_UTF8=y
 # CONFIG_DLM is not set
 CONFIG_UNICODE=y
+# CONFIG_UNICODE_NORMALIZATION_SELFTEST is not set
 
 #
 # Security options
